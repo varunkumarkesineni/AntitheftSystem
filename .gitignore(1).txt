@@ -1,0 +1,6 @@
+antitheft.db
+bills/
+__pycache__/
+*.pyc
+*.pyo
+.env
