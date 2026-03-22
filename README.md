@@ -1,198 +1,296 @@
-=================================================================
-  ANTI-THEFT WEIGHT VERIFICATION SYSTEM
-  College Project — Hardware + Software Combined
-  Python + SQLite + Arduino + HX711 + LCD + LED + Buzzer
-=================================================================
+<div align="center">
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  PROJECT OVERVIEW
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-When customers self-checkout at supermarkets (D-Mart, Reliance),
-they scan items and pack into carry bags. Some may skip scanning.
-Our system prevents theft by verifying bag weight at the exit gate
-against the expected weight stored in the database after billing.
+# ⚖️ Anti-Theft Weight Verification System
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  HARDWARE COMPONENTS
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  1. Arduino Uno / Mega
-  2. HX711 Load Cell Amplifier Module
-  3. Load Cell (5kg or 10kg rated)
-  4. LCD 16x2 Display with I2C Module
-  5. Red LED (5mm)
-  6. Green LED (5mm)
-  7. Active Buzzer
-  8. 2× 220Ω Resistors (for LEDs)
-  9. Jumper wires + Breadboard
-  10. USB Cable (Arduino ↔ PC)
-  11. PC / Raspberry Pi running Python
+### Hardware + Software Combined College Project
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  HARDWARE WIRING
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  HX711 → Arduino:
-    VCC  → 5V
-    GND  → GND
-    DT   → Pin 3
-    SCK  → Pin 2
+![Python](https://img.shields.io/badge/Python-3.10+-3776AB?style=for-the-badge&logo=python&logoColor=white)
+![Arduino](https://img.shields.io/badge/Arduino-Uno-00979D?style=for-the-badge&logo=arduino&logoColor=white)
+![SQLite](https://img.shields.io/badge/SQLite-Database-003B57?style=for-the-badge&logo=sqlite&logoColor=white)
+![License](https://img.shields.io/badge/License-MIT-green?style=for-the-badge)
+![Status](https://img.shields.io/badge/Status-Complete-brightgreen?style=for-the-badge)
 
-  HX711 → Load Cell:
-    E+   → Load Cell Red
-    E-   → Load Cell Black
-    A+   → Load Cell White
-    A-   → Load Cell Green
+> A smart anti-theft system for supermarket self-checkout counters that verifies customer bag weight at the exit gate against the billed weight stored in the database — triggering alerts for any mismatch.
 
-  LCD I2C → Arduino:
-    VCC  → 5V
-    GND  → GND
-    SDA  → A4
-    SCL  → A5
+**College Project | Hyderabad, Telangana | 2026**
 
-  Green LED → Pin 8 → 220Ω → GND
-  Red LED   → Pin 9 → 220Ω → GND
-  Buzzer(+) → Pin 10, Buzzer(-) → GND
+---
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  SOFTWARE SETUP (PC)
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  Requirements: Python 3.9+
+[🎯 Features](#-features) • [🛠️ Tech Stack](#️-tech-stack) • [⚙️ Hardware](#️-hardware-components) • [🚀 Setup](#-software-setup) • [📸 Flow](#-system-flow) • [🔌 Wiring](#-hardware-wiring)
 
-  Install dependencies:
-    pip install reportlab pillow
+</div>
 
-  For MySQL (optional, SQLite is default):
-    pip install mysql-connector-python
+---
 
-  Run the app:
-    python main_app.py
+## 🎯 Features
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  DATABASE SCHEMA (SQLite: antitheft.db)
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  TABLE: products
-    barcode      TEXT  PRIMARY KEY
-    name         TEXT
-    price        REAL
-    weight_g     REAL    ← weight of product in grams
-    category     TEXT
-    brand        TEXT
-    unit         TEXT
+| Feature | Description |
+|---|---|
+| 🛒 Self-Checkout Billing | Scan barcodes → auto-fetch product → build cart → generate PDF bill |
+| ⚖️ Weight Verification | Compare actual bag weight with billed weight at exit gate |
+| 🔌 Auto Mode | Arduino + HX711 load cell reads weight automatically via Serial |
+| ✏️ Manual Mode | Enter weight manually for demo or testing without hardware |
+| 🖥️ LCD Display | Real-time status shown on 16x2 LCD display |
+| 🟢🔴 LED Indicators | Green LED for pass, Red LED for mismatch alert |
+| 🔊 Buzzer Alert | Active buzzer triggers on weight mismatch |
+| 📄 PDF Bill | Professional bill generated with itemized list and expected weight |
+| 🗄️ SQLite Database | All products, sessions and verification logs stored locally |
+| 📊 Verification Logs | Complete history of all exit gate verifications |
 
-  TABLE: sessions
-    session_id      TEXT PRIMARY KEY
-    created_at      DATETIME
-    total_price     REAL
-    total_weight_g  REAL    ← sum of all item weights
-    item_count      INTEGER
-    status          TEXT    (active/billed/verified/flagged)
+---
 
-  TABLE: session_items
-    id           INTEGER PK
-    session_id   TEXT FK
-    barcode      TEXT FK
-    product_name TEXT
-    qty          INTEGER
-    price_each   REAL
-    weight_g     REAL
+## 🛠️ Tech Stack
 
-  TABLE: verification_logs
-    id              INTEGER PK
-    session_id      TEXT FK
-    expected_weight REAL
-    actual_weight   REAL
-    difference_g    REAL
-    result          TEXT    (MATCHED/MISMATCH)
-    verified_at     DATETIME
+### Software
+| Technology | Purpose |
+|---|---|
+| Python 3.10+ | Main application language |
+| Tkinter | GUI framework |
+| SQLite | Local database |
+| ReportLab | PDF bill generation |
+| PySerial | Arduino serial communication |
+| Pillow | Image processing |
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  PRE-LOADED PRODUCTS (20 items)
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  Barcode            Product                       Price    Weight
-  ─────────────────────────────────────────────────────────────
-  8901030874023   Amul Full Cream Milk 500ml      ₹28    520g
-  8901030559565   Amul Butter 100g                ₹55    110g
-  8901491500023   Britannia Good Day Biscuits     ₹30    200g
-  8901719114045   Parle-G Original 100g           ₹10    100g
-  8901764100027   Maggi 2-Min Noodles             ₹14     70g
-  8901058870015   Bisleri Water 1L                ₹20   1050g
-  8901396030413   Coca-Cola 500ml                 ₹40    540g
-  8901058003218   Lay's Classic Chips 45g         ₹20     45g
-  8901030591441   Amul Dahi 400g                  ₹44    420g
-  8901764502019   KitKat Chocolate                ₹30     37g
-  8901491100194   Britannia Marie Gold 250g       ₹25    250g
-  8906003480034   Aashirvaad Atta 1kg             ₹55   1050g
-  8901764102137   Munch Chocolate Bar             ₹10      9.6g
-  8901491700169   Bourbon Biscuits 150g           ₹25    150g
-  8901030560516   Amul Cheese Slices 200g        ₹100    210g
-  8906017400012   Tata Salt 1kg                   ₹24   1020g
-  8901764108665   Milkmaid 200g                   ₹60    200g
-  8901058038258   Pepsi 600ml                     ₹40    640g
-  8901396080110   Sprite 300ml                    ₹20    330g
-  8906017750015   Tata Tea Premium 100g           ₹55    110g
+### Hardware
+| Component | Purpose |
+|---|---|
+| Arduino Uno | Microcontroller |
+| HX711 Module | Load cell amplifier |
+| Load Cell 5kg | Weight measurement |
+| LCD 16x2 I2C | Display output |
+| Green LED | Pass indicator |
+| Red LED | Alert indicator |
+| Active Buzzer | Audio alert |
+| Breadboard + Wires | Circuit connections |
+| 2× 220Ω Resistors | LED current limiting |
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  COMPLETE FLOW
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  STEP 1 — Customer scans products at self-checkout:
-    → Barcode reader sends barcode to PC
-    → Software looks up product in DB
-    → Item added to cart (price + weight stored)
-    → Session accumulated
+---
 
-  STEP 2 — Bill Generation:
-    → Customer clicks "Generate Bill"
-    → PDF bill created with total price + expected bag weight
-    → Session status → "billed"
-    → Session ID printed on bill
+## ⚙️ Hardware Components
 
-  STEP 3 — Exit Gate Verification:
-    → Customer proceeds to exit gate
-    → Security scans Session ID from bill
-    → Expected weight loaded from DB
-    → Customer places carry bag on Load Cell
+```
+┌─────────────┐     ┌─────────────┐     ┌─────────────────┐
+│  Load Cell  │────▶│    HX711    │────▶│   Arduino Uno   │
+│   (5kg)     │     │  Amplifier  │     │                 │
+└─────────────┘     └─────────────┘     │  Pin 2  → SCK   │
+                                        │  Pin 3  → DT    │
+┌─────────────┐                         │  Pin 8  → LED G │
+│ LCD 16x2    │◀───────────────────────│  Pin 9  → LED R │
+│  (I2C)      │     SDA → A4           │  Pin 10 → Buzz  │
+│             │     SCL → A5           │  A4     → SDA   │
+└─────────────┘                         │  A5     → SCL   │
+                                        └─────────────────┘
+┌──────────┐  ┌──────────┐  ┌──────────┐        │
+│ Green LED│  │  Red LED │  │  Buzzer  │        │ USB Serial
+│ Pin8+220Ω│  │ Pin9+220Ω│  │  Pin 10  │        ▼
+└──────────┘  └──────────┘  └──────────┘   ┌──────────┐
+                                            │    PC    │
+                                            │  Python  │
+                                            │   App    │
+                                            └──────────┘
+```
 
-  STEP 4 — Hardware Verification:
-    → Arduino reads Load Cell via HX711
-    → Weight sent to PC via Serial
-    → PC compares: |actual - expected| ≤ 50g ?
+---
 
-  STEP 5 — Result:
-    MATCHED  → Green LED ON + LCD "MATCHED" + Gate opens
-    MISMATCH → Red LED ON + Buzzer beeps + LCD "MISMATCH" + Alert
+## 🔌 Hardware Wiring
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  BUSINESS MODEL
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  Target Customers:
-    • D-Mart, Reliance Fresh, Big Bazaar, Spencer's
-    • Airport retail stores
-    • Any self-checkout enabled supermarket
+### Load Cell → HX711
+| Load Cell Wire | HX711 Pin |
+|---|---|
+| Red | E+ |
+| Black | E- |
+| White | A+ |
+| Green | A- |
 
-  Revenue Model:
-    • One-time hardware kit sale: ₹8,000–₹15,000 per gate
-    • SaaS subscription for software: ₹2,000–₹5,000/month
-    • Installation + maintenance contract
+### HX711 → Arduino
+| HX711 Pin | Arduino Pin |
+|---|---|
+| VCC | 5V |
+| GND | GND |
+| DT | Pin 3 |
+| SCK | Pin 2 |
 
-  Cost Savings for Store:
-    • Shrinkage (theft loss) in Indian retail: ~2–3% of revenue
-    • A ₹1 crore/month store loses ₹2–3 lakh to theft
-    • Our system can reduce this by 70–80%
+### LCD 16x2 I2C → Arduino
+| LCD Pin | Arduino Pin |
+|---|---|
+| VCC | 5V |
+| GND | GND |
+| SDA | A4 |
+| SCL | A5 |
 
-  ROI for Store:
-    • System cost: ~₹50,000 per exit gate (hardware + 1yr software)
-    • Monthly savings: ₹1.5–2 lakh
-    • Break-even: < 1 month
+### LEDs + Buzzer → Arduino
+```
+Pin 8  → 220Ω → Green LED (+) → Green LED (-) → GND
+Pin 9  → 220Ω → Red LED (+)   → Red LED (-)   → GND
+Pin 10 → Buzzer (+) long leg  |  Buzzer (-) → GND
+```
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  PROJECT FILES
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  antitheft_system/
-  ├── main_app.py               ← Main GUI application (run this)
-  ├── database_setup.py         ← DB schema + product seeding
-  ├── antitheft.db              ← SQLite database (auto-created)
-  ├── bills/                    ← Generated PDF bills
-  ├── arduino_hardware/
-  │   └── antitheft_hardware.ino ← Arduino code
-  └── README.txt                ← This file
+> 💡 All components share common GND through breadboard GND rail
 
-=================================================================
+---
+
+## 🗄️ Database Schema
+
+```sql
+products          -- 20 pre-loaded products with barcode, price, weight
+sessions          -- each customer billing session
+session_items     -- individual scanned items per session
+verification_logs -- exit gate weight check history
+```
+
+### Pre-Loaded Products (20 items)
+| Barcode | Product | Price | Weight |
+|---|---|---|---|
+| 8901030874023 | Amul Full Cream Milk 500ml | ₹28 | 520g |
+| 8901719114045 | Parle-G Original 100g | ₹10 | 100g |
+| 8901764100027 | Maggi 2-Min Noodles 70g | ₹14 | 70g |
+| 8901058870015 | Bisleri Water Bottle 1L | ₹20 | 1050g |
+| 8901396030413 | Coca-Cola 500ml | ₹40 | 540g |
+| 8901491500023 | Britannia Good Day 200g | ₹30 | 200g |
+| 8901058003218 | Lays Classic Salted 45g | ₹20 | 45g |
+| 8901764502019 | KitKat Chocolate 37g | ₹30 | 37g |
+| 8906003480034 | Aashirvaad Atta 1kg | ₹55 | 1050g |
+| 8906017400012 | Tata Salt 1kg | ₹24 | 1020g |
+| *...and 10 more* | | | |
+
+---
+
+## 🚀 Software Setup
+
+### Prerequisites
+- Python 3.10 or higher
+- pip package manager
+
+### Installation
+
+**Step 1 — Clone the repository**
+```bash
+git clone https://github.com/varunkumarkesineni/AntitheftSystem.git
+cd AntitheftSystem
+```
+
+**Step 2 — Install required libraries**
+```bash
+pip install reportlab pillow pyserial
+```
+
+**Step 3 — Run the application**
+```bash
+python main_app.py
+```
+
+> The database (`antitheft.db`) and `bills/` folder are created automatically on first run with all 20 products pre-loaded.
+
+---
+
+## 🔧 Arduino Setup
+
+**Step 1 — Install Arduino IDE**
+Download from [https://arduino.cc/en/software](https://arduino.cc/en/software)
+
+**Step 2 — Install Required Libraries**
+
+Open Arduino IDE → Tools → Manage Libraries → Search and install:
+- `HX711` by Bogdan Necula
+- `LiquidCrystal I2C` by Frank de Bruijn
+
+**Step 3 — Upload Code**
+- Open `arduino_hardware/antitheft_hardware.ino`
+- Select Board: `Tools → Board → Arduino Uno`
+- Select Port: `Tools → Port → COM3` (or your port)
+- Click Upload
+
+**Step 4 — Calibrate Load Cell**
+
+Open Serial Monitor (baud: 9600) and type:
+```
+TARE        ← zeros the scale
+READWEIGHT  ← reads current weight
+VERIFY:520  ← tests verification with 520g expected
+```
+
+---
+
+## 📸 System Flow
+
+```
+BILLING COUNTER                    EXIT GATE
+─────────────────                  ──────────────────────
+Customer scans barcode             Session ID loaded
+       ↓                                  ↓
+Product fetched from DB            Expected weight loaded
+       ↓                                  ↓
+Added to cart                      Customer places bag
+       ↓                            on load cell
+Total weight calculated                   ↓
+       ↓                           Arduino reads weight
+Bill generated (PDF)                      ↓
+       ↓                           Compare actual vs expected
+Session ID printed                        ↓
+       ↓                    ┌─────────────────────────┐
+Customer proceeds           │  |diff| ≤ 50g ?         │
+to exit gate                │  YES → MATCHED ✅        │
+                            │       Green LED ON       │
+                            │       LCD: MATCHED       │
+                            │                         │
+                            │  NO  → MISMATCH ❌       │
+                            │       Red LED ON         │
+                            │       Buzzer beeps       │
+                            │       LCD: ALERT!        │
+                            └─────────────────────────┘
+```
+
+---
+
+## 📁 Project Structure
+
+```
+AntitheftSystem/
+│
+├── main_app.py                 # Main GUI application
+├── database_setup.py           # Database schema + product seeding
+├── antitheft.db                # SQLite database (auto-created)
+│
+├── arduino_hardware/
+│   └── antitheft_hardware.ino  # Arduino code
+│
+├── bills/                      # Generated PDF bills (auto-created)
+│
+└── README.md                   # Project documentation
+```
+
+---
+
+## 💼 Business Model
+
+| Aspect | Details |
+|---|---|
+| Target Market | D-Mart, Reliance Fresh, Big Bazaar, Airport retail |
+| Hardware Cost | ₹8,000 – ₹15,000 per exit gate |
+| Software SaaS | ₹2,000 – ₹5,000 per month |
+| Shrinkage Loss | 2–3% of revenue in Indian retail |
+| ROI for Store | Break-even in under 1 month |
+
+---
+
+## 👨‍💻 Team
+
+**Project by:** Varun Kumar Kesineni
+**Institution:** CMR College Of Engineering & Technology — Hyderabad,Telangana,Ind
+**Year:** 2025-2026
+
+---
+
+## 📄 License
+
+This project is licensed under the MIT License.
+
+---
+
+<div align="center">
+
+### ⭐ If you found this project useful, please give it a star!
+
+**Made with ❤️ in Hyderabad, India**
+
+</div>
