@@ -1,6 +1,6 @@
 <div align="center">
 
-# ⚖️ Anti-Theft Weight Verification System
+#  Anti-Theft Weight Verification System
 
 ### Hardware + Software Combined College Project
 
