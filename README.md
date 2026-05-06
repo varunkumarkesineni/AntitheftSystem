@@ -273,7 +273,7 @@ AntitheftSystem/
 
 ---
 
-## 👨‍💻 Team
+
 
 **Project by:** Varun Kumar Kesineni
 
