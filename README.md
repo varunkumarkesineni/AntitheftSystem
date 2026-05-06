@@ -276,7 +276,9 @@ AntitheftSystem/
 ## 👨‍💻 Team
 
 **Project by:** Varun Kumar Kesineni
+
 **Institution:** CMR College Of Engineering & Technology — Hyderabad,Telangana,Ind
+
 **Year:** 2025-2026
 
 ---
